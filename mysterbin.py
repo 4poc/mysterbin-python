@@ -130,7 +130,7 @@ class Posting(object):
         self.rar_extract = posting['RARextract']
         self.rar_passwd = posting['RARpasswd']
         self.extensions = posting['extensions']
-        self.groupid = int(posting['groupid'])
+        if posting['groupid']: self.groupid = int(posting['groupid'])
         self.groups = posting['groups']
         self.has_nfo = posting['hasNFO']
         self.has_rars = posting['hasRARs']
