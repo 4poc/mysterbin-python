@@ -264,7 +264,7 @@ Local Options:
                 request.qroup = arg
 
             elif opt in ('-n', '--nresults'):
-                request.nresults = arg
+                request.nresults = int(arg)
 
             elif opt in ('-s', '--start'):
                 request.start = arg
@@ -282,7 +282,7 @@ Local Options:
                 request.passwd = True
 
             elif opt in ('-c', '--complete'):
-                request.complete = arg
+                request.complete = int(arg)
 
             elif opt in ('-l', '--limit'):
                 limit = int(arg)
