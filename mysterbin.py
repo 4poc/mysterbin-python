@@ -78,6 +78,7 @@ class Request(object):
         self._fsize = None
         self.min_size = None
         self.max_size = None
+        self.max_age = None
 
     def search(self, query):
         self.query = query
@@ -96,7 +97,8 @@ class Request(object):
             'fytype': self.fytype,
             'fsize': self.fsize,
             'minSize': self.min_size,
-            'maxSize': self.max_size if self.max_size != -1 else 'max'
+            'maxSize': self.max_size if self.max_size != -1 else 'max',
+            'maxAge': self.max_age
         }
         for param in iter(hparams):
             if hparams[param]: 
@@ -251,15 +253,22 @@ class Posting(object):
 
 
 def main():
+    request = Request()
+
     # some defaults for the local options
     limit = None
     auto = False
     output = os.getcwd()
     filename = None
     qfile = False
+    max_age = None
 
     if 'MYSTERBIN_PATH' in os.environ:
         output = os.environ['MYSTERBIN_PATH']
+
+    if 'MYSTERBIN_RETENTION' in os.environ:
+        max_age = os.environ['MYSTERBIN_RETENTION']
+    request.max_age = max_age
 
     def usage():
         print('''Mysterbin %s - NZB Search and Download
@@ -282,11 +291,7 @@ API Search Options:
       --size                 size: %s
       --min-size <size>      minimum size in mb
       --max-size <size>      maximum size in mb (or 'max')
-
-  ****************************************************************
-  * NOT implemented yet: minSize, maxSize, maxAge                *
-  ****************************************************************
-
+  -r, --max-age              the maximum retention time in days (default: %s)
   -f, --nfo                  get only results with a NFO file
   -p, --passwd               skip results with passwords
   -c, --complete <0/1/2/3>   set a restriction on the completeness
@@ -308,17 +313,16 @@ Local Options:
   
 Environment:
 
-  MYSTERBIN_PATH             set to change default output directory''' % (VERSION, 
+  MYSTERBIN_PATH             set to change default output directory
+  MYSTERBIN_RETENTION        set to the default maximum age''' % (VERSION, 
       sys.argv[0], ', '.join(sorted(FYTYPE.keys())), 
-      ', '.join(sorted(FSIZE.keys())), output))
-
-    request = Request()
+      ', '.join(sorted(FSIZE.keys())), max_age, output))
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'q:g:n:s:m:fpc:l:ao:ht:', ['query=', 
+        opts, args = getopt.getopt(sys.argv[1:], 'q:g:n:s:m:fpc:l:ao:ht:r:', ['query=', 
             'group=', 'nresults=', 'start=', 'match=', 'nocollapse',
             'nfo', 'passwd', 'complete=', 'limit=', 'auto', 
-            'output=', 'file=', 'qfile', 'help', 'type=', 'size=', 'min-size=', 'max-size='])
+            'output=', 'file=', 'qfile', 'help', 'type=', 'size=', 'min-size=', 'max-size=', 'max-age='])
 
         for opt, arg in opts:
             if opt in ('-g', '--group'):
@@ -388,6 +392,9 @@ Environment:
                     request.max_size = -1
                 else:
                     raise ValueError('invalid maximum size')
+
+            elif opt in ('-r', '--max-age'):
+                request.max_age = int(arg)
 
             elif opt in ('-h', '--help'):
                 usage()
