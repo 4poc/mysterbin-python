@@ -452,7 +452,7 @@ Environment:
         print()
 
     selected = list(range(0, len(all_results)))
-    if not auto:
+    if not auto and len(all_results) > 0:
         sys.stdout.write('Download[q=quit,a=all]: ')
         sys.stdout.flush()
         sel = sys.stdin.readline().strip()
