@@ -403,11 +403,11 @@ Environment:
             else:
                 raise ValueError('unhandled option')
 
-        if len(sys.argv) <= 1:
+        if len(args) <= 1:
             raise getopt.GetoptError('You need to specify a search query.')
 
         queries = []
-        query = sys.argv[-1]
+        query = ' '.join(args)
         m = re.search('(\{(\d+)\-(\d+)\})', query)
         if m:
             num_range = m.group(1)
