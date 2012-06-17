@@ -76,6 +76,8 @@ class Request(object):
         self._complete = None
         self._fytype = None
         self._fsize = None
+        self.min_size = None
+        self.max_size = None
 
     def search(self, query):
         self.query = query
@@ -92,7 +94,9 @@ class Request(object):
             'complete': self.complete,
             'key': Request.key,
             'fytype': self.fytype,
-            'fsize': self.fsize
+            'fsize': self.fsize,
+            'minSize': self.min_size,
+            'maxSize': self.max_size if self.max_size != -1 else 'max'
         }
         for param in iter(hparams):
             if hparams[param]: 
@@ -276,6 +280,8 @@ API Search Options:
                              from the same poster
   -t, --type                 type: %s
       --size                 size: %s
+      --min-size <size>      minimum size in mb
+      --max-size <size>      maximum size in mb (or 'max')
 
   ****************************************************************
   * NOT implemented yet: minSize, maxSize, maxAge                *
@@ -312,7 +318,7 @@ Environment:
         opts, args = getopt.getopt(sys.argv[1:], 'q:g:n:s:m:fpc:l:ao:ht:', ['query=', 
             'group=', 'nresults=', 'start=', 'match=', 'nocollapse',
             'nfo', 'passwd', 'complete=', 'limit=', 'auto', 
-            'output=', 'file=', 'qfile', 'help', 'type=', 'size='])
+            'output=', 'file=', 'qfile', 'help', 'type=', 'size=', 'min-size=', 'max-size='])
 
         for opt, arg in opts:
             if opt in ('-g', '--group'):
@@ -368,6 +374,20 @@ Environment:
                     request.fsize = FSIZE[arg]
                 else:
                     raise ValueError('unknown size')
+
+            elif opt in ('--min-size'):
+                if arg.isdigit():
+                    request.min_size = int(arg)
+                else:
+                    raise ValueError('invalid minimum size')
+
+            elif opt in ('--max-size'):
+                if arg.isdigit():
+                    request.max_size = int(arg)
+                elif arg == 'max':
+                    request.max_size = -1
+                else:
+                    raise ValueError('invalid maximum size')
 
             elif opt in ('-h', '--help'):
                 usage()
