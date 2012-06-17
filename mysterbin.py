@@ -204,6 +204,16 @@ class Posting(object):
 
 
 def main():
+    # some defaults for the local options
+    limit = None
+    auto = False
+    output = os.getcwd()
+    filename = None
+    qfile = False
+
+    if 'MYSTERBIN_PATH' in os.environ:
+        output = os.environ['MYSTERBIN_PATH']
+
     def usage():
         print('''Mysterbin %s - NZB Search and Download
 
@@ -236,22 +246,19 @@ Local Options:
   -a, --auto                 (local) automatically download all found
                              postings
   -o, --output <path>        specify output directory for nzb files
-                             (defaults to pwd)
+                             (default: %s)
       --file <file>          use this as a base for filenames (if 
                              necessary append id)
       --qfile                use search query for filename (if 
                              necessary append id)             
 
-  -h, --help                 show this help''' % (VERSION, sys.argv[0]))
+  -h, --help                 show this help
+  
+Environment:
+
+  MYSTERBIN_PATH             set to change default output directory''' % (VERSION, sys.argv[0], output))
 
     request = Request()
-
-    # some defaults for the local options
-    limit = None
-    auto = False
-    output = os.getcwd()
-    filename = None
-    qfile = False
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'q:g:n:s:m:fpc:l:ao:h', ['query=', 
