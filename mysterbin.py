@@ -40,6 +40,26 @@ except ImportError:
 Bold = '\x1B[1m'
 Normal = '\x1B[0m'
 
+FYTYPE = { # only used in the cli frontend as a convenient abstraction
+    'video': 1,
+    'audio': 2,
+    'exe': 3,
+    'iso': 4,
+    'picture': 5,
+    'archive': 6,
+    'par2': 7,
+    'ebook': 8,
+    'other': 100
+}
+FSIZE = {
+    '1m': 1,
+    '1-10m': 2,
+    '10-100m': 3,
+    '100m-1g': 4,
+    '1g-4g': 5,
+    '4g': 6
+}
+
 class Request(object):
 
     url = 'http://www.mysterbin.com/api'
@@ -54,6 +74,8 @@ class Request(object):
         self.nfo = False
         self.passwd = False
         self._complete = None
+        self._fytype = None
+        self._fsize = None
 
     def search(self, query):
         self.query = query
@@ -68,7 +90,9 @@ class Request(object):
             'nfo': 'true' if self.nfo else 'false',
             'passwd': 'true' if self.passwd else 'false',
             'complete': self.complete,
-            'key': Request.key
+            'key': Request.key,
+            'fytype': self.fytype,
+            'fsize': self.fsize
         }
         for param in iter(hparams):
             if hparams[param]: 
@@ -77,7 +101,6 @@ class Request(object):
                     quote_plus(str(hparams[param]))))
         url = '%s?%s' % (Request.url, '&'.join(params))
 
-        print(url)
         content = urlopen(url).read().decode('utf-8')
 
         return Result(json.loads(content))
@@ -111,6 +134,26 @@ class Request(object):
         return self._complete
 
     complete = property(get_complete, set_complete)
+
+    def set_fytype(self, fytype):
+        if not fytype in range(1, 9) or fytype == 100:
+            raise ValueError('Valid fytype values are 1-8 and 100.')
+        self._fytype = fytype
+
+    def get_fytype(self):
+        return self._fytype
+
+    fytype = property(get_fytype, set_fytype)
+
+    def set_fsize(self, fsize):
+        if not fsize in range(1, 7):
+            raise ValueError('Valid fsize values are 1-6.')
+        self._fsize = fsize
+
+    def get_fsize(self):
+        return self._fsize
+
+    fsize = property(get_fsize, set_fsize)
 
 class Result(list):
 
@@ -221,8 +264,8 @@ Syntax: %s [OPTION] <QUERY>
 
 API Search Options:
 
-  <QUERY>                   the text query, you may include ranges
-                            like {01-25}
+  <QUERY>                    the text query, you may include ranges
+                             like {01-25}
 
   -g, --group <group>        exact name of a group to search into
   -n, --nresults <25/50/100> number of results per call
@@ -231,8 +274,11 @@ API Search Options:
                              matching mode
       --nocollapse           don't hide too many consecutive results 
                              from the same poster
+  -t, --type                 type: %s
+      --size                 size: %s
+
   ****************************************************************
-  * NOT implemented yet: fytype, fsize, minSize, maxSize, maxAge *
+  * NOT implemented yet: minSize, maxSize, maxAge                *
   ****************************************************************
 
   -f, --nfo                  get only results with a NFO file
@@ -256,15 +302,17 @@ Local Options:
   
 Environment:
 
-  MYSTERBIN_PATH             set to change default output directory''' % (VERSION, sys.argv[0], output))
+  MYSTERBIN_PATH             set to change default output directory''' % (VERSION, 
+      sys.argv[0], ', '.join(sorted(FYTYPE.keys())), 
+      ', '.join(sorted(FSIZE.keys())), output))
 
     request = Request()
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'q:g:n:s:m:fpc:l:ao:h', ['query=', 
+        opts, args = getopt.getopt(sys.argv[1:], 'q:g:n:s:m:fpc:l:ao:ht:', ['query=', 
             'group=', 'nresults=', 'start=', 'match=', 'nocollapse',
             'nfo', 'passwd', 'complete=', 'limit=', 'auto', 
-            'output=', 'file=', 'qfile', 'help'])
+            'output=', 'file=', 'qfile', 'help', 'type=', 'size='])
 
         for opt, arg in opts:
             if opt in ('-g', '--group'):
@@ -308,6 +356,18 @@ Environment:
 
             elif opt in ('--qfile'):
                 qfile = True
+
+            elif opt in ('-t', '--type'):
+                if arg in FYTYPE:
+                    request.fytype = FYTYPE[arg]
+                else:
+                    raise ValueError('unknown type')
+
+            elif opt in ('--size'):
+                if arg in FSIZE:
+                    request.fsize = FSIZE[arg]
+                else:
+                    raise ValueError('unknown size')
 
             elif opt in ('-h', '--help'):
                 usage()
