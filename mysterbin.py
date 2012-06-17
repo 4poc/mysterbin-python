@@ -403,7 +403,7 @@ Environment:
             else:
                 raise ValueError('unhandled option')
 
-        if len(args) <= 1:
+        if len(args) < 1:
             raise getopt.GetoptError('You need to specify a search query.')
 
         queries = []
