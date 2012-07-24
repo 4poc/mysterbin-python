@@ -203,7 +203,14 @@ class Posting(object):
     subject_bold = property(get_subject_bold)
 
     def get_retention(self):
-        return time.localtime((time.time() - int(self.posted_date))).tm_mday 
+        age_seconds = time.time() - int(self.posted_date)
+        if age_seconds < 60: return '%dsec' % age_seconds
+        age_minutes = age_seconds / 60
+        if age_minutes < 60: return '%dmin' % age_minutes
+        age_hours = age_minutes / 60
+        if age_hours < 24: return '%dh' % age_hours
+        age_days = age_hours / 24
+        return '%dd' % age_days
 
     retention = property(get_retention)
 
@@ -455,12 +462,12 @@ Environment:
         posting = all_results[i]
         print('[%2d] %s' % (i+1, posting.get_subject_bold()))
         meta = [
-            '%dd' % posting.retention,
+            '%s' % posting.retention,
             posting.readable_size, 
             '%.2f%%' % posting.complete_percent,
             posting.extensions, 
             posting.poster]
-        if posting.has_nfo: meta.insert(0, 'NFO')
+        if posting.has_nfo: meta.append('NFO')
         print('     %s' % (' | '.join(meta)))
         print()
 
