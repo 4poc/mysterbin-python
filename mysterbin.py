@@ -174,6 +174,7 @@ class Result(list):
 class Posting(object):
 
     nzb_url = 'http://www.mysterbin.com/nzb?c='
+    nfo_url = 'http://www.mysterbin.com/nfo?c='
 
     def __init__(self, posting):
         self.rar_extract = posting['RARextract']
@@ -219,6 +220,17 @@ class Posting(object):
         return self.parts_found / (self.parts_total / 100.0)
 
     complete_percent = property(get_complete_percent)
+
+
+    def showNFO(self):
+        if not self.has_nfo: return
+        response = urlopen(Posting.nfo_url + str(self.id))
+        contents = response.read().decode('utf-8')
+        m = re.search(r'<pre>([\s\S]+)<\/pre>', contents, re.MULTILINE)
+        if m:
+            print(m.group(1))
+        else:
+            print('NFO file not found.')
 
     def downloadNZB(self, directory, filename=None):
         # default filename to the filename responded by the 
@@ -442,25 +454,48 @@ Environment:
     for i in range(0, limit if (limit and limit < len(all_results)) else len(all_results)):
         posting = all_results[i]
         print('[%2d] %s' % (i+1, posting.get_subject_bold()))
-        meta = (
+        meta = [
             '%dd' % posting.retention,
             posting.readable_size, 
             '%.2f%%' % posting.complete_percent,
             posting.extensions, 
-            posting.poster)
+            posting.poster]
+        if posting.has_nfo: meta.insert(0, 'NFO')
         print('     %s' % (' | '.join(meta)))
         print()
 
-    selected = list(range(0, len(all_results)))
-    if not auto and len(all_results) > 0:
-        sys.stdout.write('Download[q=quit,a=all]: ')
+    def downloadSelected(selected):
+        for selection in selected:
+            posting = all_results[selection-1]
+            print('Download id: '+str(posting.id))
+            # TODO: fix that qfile here filename = posting.
+            posting.downloadNZB(output, filename)
+        sys.exit()
+
+    # interactive mode:
+    while True:
+        sys.stdout.write('Use n[Number] to display an nfo file. (for instance: n42)\n')
+        sys.stdout.write('Download[q=quit,a=all,n#]: ')
         sys.stdout.flush()
-        sel = sys.stdin.readline().strip()
+        if auto:
+            sel = 'a'
+        else:
+            sel = sys.stdin.readline().strip()
+            if len(sel) == 0: continue
+
         if sel == 'q':
             sys.exit()
 
         elif sel == 'a':
             selected = list(range(0, len(all_results)))
+            downloadSelected(selected)
+
+        elif sel[0] == 'n':
+            posting = all_results[int(sel[1:]) - 1]
+            if posting.has_nfo:
+                posting.showNFO()
+            else:
+                print('Posting has no NFO file.')
 
         else:
             # Valid syntax for selection:
@@ -482,15 +517,8 @@ Environment:
                 elif s != '':
                     print('WARNING: ignored your selection: %s' % s)
             print('Your selection: ' + str(selected))
-
-    for selection in selected:
-        posting = all_results[selection-1]
-        print('Download id: '+str(posting.id))
-        # TODO: fix that qfile here filename = posting.
-        posting.downloadNZB(output, filename)
-
-
-
+            if len(selected) > 0:
+                downloadSelected(selected)
 
 if __name__ == '__main__':
     main()
